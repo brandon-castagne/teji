@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4a2f21">
+<title>Demo · Inventario Tejidos Wayra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --crema:#f6efe3; --lino:#ebdfca; --arcilla:#a8643c; --cafe:#4a2f21;
+  --musgo:#5f6a3c; --tinta:#2e2019; --blanco:#fffaf1; --rojo:#b3392b; --verde:#1f8f4e;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --sans:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--sans);background:var(--crema);color:var(--tinta);line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--arcilla);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* Barra superior y pestañas */
+.top{background:var(--cafe);color:var(--crema);padding:.85rem 1rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+.top h1{font-family:var(--serif);font-size:1.2rem;font-weight:700}
+.top button{background:none;border:0;color:var(--crema);font-size:1.5rem;line-height:1;padding:.2rem .6rem}
+.tabs{position:fixed;bottom:0;left:0;right:0;z-index:10;background:var(--blanco);border-top:1px solid var(--lino);display:grid;grid-template-columns:repeat(3,1fr);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{border:0;border-top:3px solid transparent;background:none;padding:.9rem 0;font-weight:700;color:#8a7767}
+.tabs button[aria-selected="true"]{color:var(--cafe);border-top-color:var(--arcilla)}
+
+.wrap{max-width:720px;margin:0 auto;padding:1rem}
+h2{font-family:var(--serif);color:var(--cafe);font-size:1.5rem;line-height:1.15}
+h3{font-family:var(--serif);color:var(--cafe);font-size:1.1rem;margin:1.4rem 0 .6rem}
+.fecha{color:#6d5a4c;margin:.1rem 0 .9rem}
+.modo{background:var(--lino);color:var(--cafe);font-size:.85rem;padding:.55rem .8rem;border-radius:8px;margin-bottom:.9rem}
+
+/* Botones */
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:.4rem;border:0;border-radius:999px;padding:.85rem 1.4rem;font-weight:700;background:var(--cafe);color:var(--crema);width:100%}
+.btn:active{transform:scale(.98)}
+.btn.verde{background:var(--verde);color:#fff}
+.btn.sec,.mini.sec{background:transparent;color:var(--cafe);border:1.5px solid var(--cafe)}
+.btn.peligro{background:transparent;color:var(--rojo);border:1.5px solid var(--rojo)}
+.btn:disabled,.mini:disabled{opacity:.4;cursor:not-allowed}
+.mini{border:0;border-radius:999px;background:var(--cafe);color:var(--crema);padding:.4rem .9rem;font-size:.85rem;font-weight:700}
+.link{background:none;border:0;color:var(--arcilla);font-weight:700;padding:.3rem 0;text-decoration:underline}
+
+/* Resumen */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:.9rem}
+.tile{background:var(--blanco);border-radius:8px;padding:.85rem .95rem;box-shadow:0 1px 0 rgba(74,47,33,.12)}
+.tile b{display:block;font-family:var(--serif);font-size:1.7rem;color:var(--cafe);line-height:1.1}
+.tile span{font-size:.85rem;color:#6d5a4c}
+.alerta{width:100%;text-align:left;border:0;background:#f3dccf;color:#7d3a1c;font-weight:700;padding:.7rem .9rem;border-radius:8px;margin-bottom:.9rem}
+.vacio{color:#6d5a4c;padding:1rem 0}
+
+/* Ventas */
+.venta{display:grid;grid-template-columns:1fr auto;gap:.1rem .8rem;background:var(--blanco);border-radius:8px;padding:.7rem .85rem;margin-bottom:.5rem;align-items:center}
+.venta small,.prenda small{color:#6d5a4c;display:block}
+.venta .tot{font-weight:700;color:var(--arcilla);text-align:right}
+.venta .link{grid-column:2;justify-self:end;font-size:.85rem}
+
+/* Stock */
+.buscar,.adm input,.formu input,.formu select{font:inherit;width:100%;padding:.7rem .8rem;border:1.5px solid #cdbba0;border-radius:8px;background:var(--blanco);color:var(--tinta)}
+.chips{display:flex;gap:.45rem;overflow-x:auto;padding:.6rem 0;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;border:1.5px solid var(--cafe);background:transparent;color:var(--cafe);border-radius:999px;padding:.35rem .9rem;font-weight:600;font-size:.9rem}
+.chips button[aria-pressed="true"]{background:var(--cafe);color:var(--crema)}
+.prenda{display:grid;grid-template-columns:1fr auto;gap:.4rem .8rem;background:var(--blanco);border-radius:8px;padding:.8rem .9rem;margin-bottom:.55rem;align-items:center}
+.prenda b{color:var(--cafe)}
+.pstock{text-align:right;line-height:1.1}
+.pstock b{font-family:var(--serif);font-size:1.7rem;display:block}
+.pstock small{font-size:.75rem}
+.pstock.ok b{color:var(--musgo)} .pstock.bajo b{color:var(--arcilla)} .pstock.cero b{color:var(--rojo)}
+.pbtn{grid-column:1/-1;display:flex;gap:.4rem;flex-wrap:wrap}
+
+/* Historial */
+.chart{display:flex;gap:3px;background:var(--blanco);border-radius:8px;padding:.7rem .6rem .4rem}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
+.barcol{height:120px;width:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.barcol i{display:block;width:100%;background:var(--arcilla);border-radius:3px 3px 0 0}
+.barcol .n{font-size:.7rem;font-weight:700;color:var(--cafe)}
+.bar .l{font-size:.65rem;color:#6d5a4c;height:1.6em;margin-top:.25rem;text-align:center;line-height:1.1}
+.rank{display:grid;grid-template-columns:1fr auto;gap:.1rem .8rem;padding:.5rem 0;border-bottom:1px solid var(--lino)}
+.rank b{font-weight:600}
+details{background:var(--blanco);border-radius:8px;margin-bottom:.5rem;padding:0 .85rem}
+summary{padding:.75rem 0;font-weight:700;color:var(--cafe);cursor:pointer;display:flex;justify-content:space-between;gap:.6rem}
+summary span{color:var(--arcilla)}
+details .venta{background:var(--crema)}
+
+/* Diálogos */
+dialog{border:0;padding:0;width:min(100%,520px);max-width:100%;max-height:92svh;margin:auto;background:var(--crema);border-radius:14px;overflow:auto;color:var(--tinta)}
+dialog::backdrop{background:rgba(46,32,25,.6)}
+@media(max-width:600px){dialog{margin:auto 0 0;border-radius:16px 16px 0 0}}
+.formu,.cuerpo{padding:1.2rem 1.1rem 1.5rem;display:grid;gap:.8rem}
+.formu label,.cuerpo label{display:grid;gap:.25rem;font-weight:600;color:var(--cafe);font-size:.9rem}
+.formu small,.cuerpo small{font-weight:400;color:#7b6757}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.aviso{min-height:1.2em;font-weight:700;color:var(--rojo)}
+.pick{display:flex;justify-content:space-between;align-items:center;gap:.6rem;width:100%;text-align:left;background:var(--blanco);border:0;border-radius:8px;padding:.7rem .85rem;margin-top:.45rem}
+.pick small{display:block;color:#6d5a4c}
+.pick .st{font-family:var(--serif);font-weight:700;font-size:1.2rem;color:var(--musgo)}
+.pick .st.bajo{color:var(--arcilla)}
+.paso{display:flex;align-items:center;justify-content:center;gap:1rem;margin:.2rem 0}
+.paso button{width:3rem;height:3rem;border-radius:50%;border:1.5px solid var(--cafe);background:transparent;color:var(--cafe);font-size:1.5rem;line-height:1}
+.paso input{width:5rem;text-align:center;font-size:1.5rem;font-family:var(--serif);font-weight:700}
+.total{display:flex;justify-content:space-between;font-family:var(--serif);font-size:1.4rem;color:var(--cafe);padding:.2rem 0}
+.menuitem{width:100%;text-align:left;border:0;background:var(--blanco);padding:.9rem;border-radius:8px;font-weight:700;color:var(--cafe)}
+
+/* Acceso */
+.login{max-width:380px;margin:0 auto;padding:3rem 1.2rem;display:grid;gap:.9rem}
+.login label{display:grid;gap:.25rem;font-weight:600;color:var(--cafe)}
+.login input{font:inherit;padding:.75rem;border:1.5px solid #cdbba0;border-radius:8px;background:var(--blanco)}
+
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--cafe);color:var(--crema);padding:.65rem 1.1rem;border-radius:999px;font-weight:700;font-size:.9rem;z-index:50;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:90vw;text-align:center}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ Pantalla de acceso (solo cuando Firebase está activo) ============ -->
+<div id="login" class="login" hidden>
+  <h2 id="loginMarca"></h2>
+  <p>Entra para ver y registrar las ventas.</p>
+  <label>Correo<input id="lCorreo" type="email" autocomplete="username"></label>
+  <label>Contraseña<input id="lClave" type="password" autocomplete="current-password"></label>
+  <p class="aviso" id="lMsg" role="status"></p>
+  <button class="btn" id="lEntrar">Entrar</button>
+</div>
+
+<!-- ============ App ============ -->
+<div id="app" hidden>
+  <header class="top">
+    <h1 id="marca"></h1>
+    <button id="btnMenu" aria-label="Menú">⋮</button>
+  </header>
+
+  <main class="wrap">
+    <div class="modo" id="modoLocal" hidden>Demo: prueba vender, registrar prendas y ver el historial. Los cambios se borran al recargar. En la versión real se guardan en la nube.</div>
+
+    <!-- HOY -->
+    <section id="v-hoy">
+      <h2>Hoy</h2>
+      <p class="fecha" id="fechaHoy"></p>
+      <div class="tiles">
+        <div class="tile"><b id="tUnid">0</b><span>prendas vendidas</span></div>
+        <div class="tile"><b id="tIng">0</b><span>ingresos del día</span></div>
+      </div>
+      <div id="alertaBajo"></div>
+      <button class="btn verde" data-a="nuevaVenta">+ Registrar venta</button>
+      <h3>Ventas de hoy</h3>
+      <div id="ventasHoy"></div>
+    </section>
+
+    <!-- STOCK -->
+    <section id="v-stock" hidden>
+      <h2>Stock</h2>
+      <p class="fecha" id="resStock"></p>
+      <button class="btn" data-a="nuevaPrenda">+ Registrar prenda</button>
+      <div style="height:.8rem"></div>
+      <input class="buscar" id="buscar" type="search" placeholder="Buscar prenda, talla o color" aria-label="Buscar">
+      <div class="chips" id="chipsStock" aria-label="Filtrar por categoría"></div>
+      <div id="listaStock"></div>
+    </section>
+
+    <!-- HISTORIAL -->
+    <section id="v-hist" hidden>
+      <h2>Historial de ventas</h2>
+      <div class="chips" id="chipsRango" aria-label="Periodo"></div>
+      <div class="tiles">
+        <div class="tile"><b id="hUnid">0</b><span>prendas vendidas</span></div>
+        <div class="tile"><b id="hIng">0</b><span>ingresos</span></div>
+      </div>
+      <div id="grafico"></div>
+      <h3>Las más vendidas</h3>
+      <div id="ranking"></div>
+      <h3>Por día</h3>
+      <div id="porDia"></div>
+      <div style="height:.8rem"></div>
+      <button class="btn sec" data-a="csv">Descargar ventas (Excel / CSV)</button>
+    </section>
+  </main>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-v="hoy" aria-selected="true">Hoy</button>
+    <button role="tab" data-v="stock" aria-selected="false">Stock</button>
+    <button role="tab" data-v="hist" aria-selected="false">Historial</button>
+  </nav>
+</div>
+
+<dialog id="dlg"></dialog>
+<div id="toast" role="status" hidden></div>
+
+
+<script>
+/* =====================================================================
+   1) CONFIGURACIÓN — lo único que hay que tocar en el código
+   ===================================================================== */
+const NEGOCIO = {
+  nombre: "Tejidos Wayra",   // aparece arriba en la app
+  moneda: "Bs"
+};
+const STOCK_BAJO = 2;   // avisa cuando una prenda tenga esta cantidad o menos (se puede cambiar por prenda)
+
+/* Para guardar los datos en la nube (y verlos desde cualquier celular):
+   pega aquí la configuración de Firebase (la misma del catálogo sirve).
+   Mientras diga "PEGA_AQUI", la app funciona en modo de prueba, guardando solo en este teléfono. */
+const FIREBASE = {
+  apiKey: "PEGA_AQUI",
+  authDomain: "PEGA_AQUI.firebaseapp.com",
+  databaseURL: "https://PEGA_AQUI-default-rtdb.firebaseio.com",
+  projectId: "PEGA_AQUI",
+  appId: "PEGA_AQUI"
+};
+
+/* =====================================================================
+   2) CÓDIGO — no hace falta tocar de aquí hacia abajo
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sinTildes = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const money = n => { n = Math.round((+n || 0) * 100) / 100; return `${NEGOCIO.moneda} ${Number.isInteger(n) ? n : n.toFixed(2)}`; };
+const suma = (arr, k) => arr.reduce((s, x) => s + (+x[k] || 0), 0);
+
+/* Fechas (siempre con la hora del teléfono) */
+const DIAS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+const DIAS_C = ["dom","lun","mar","mié","jue","vie","sáb"];
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const fechaStr = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const hoyStr = () => fechaStr(new Date());
+const parseFecha = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const fechaLarga = s => { const d = parseFecha(s); return `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`; };
+const fechaCorta = s => { const d = parseFecha(s); return `${DIAS_C[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()].slice(0, 3)}`; };
+const horaStr = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+
+/* Estado */
+const FB_OK = !!FIREBASE.apiKey && !FIREBASE.apiKey.startsWith("PEGA") && typeof firebase !== "undefined";
+const KEY = "tejidos-inventario-v1";
+let db = null, auth = null;
+let D = { productos: {}, ventas: {} };
+let vista = "hoy", rango = "7", fStock = { q: "", cat: "Todas", bajo: false };
+let venta = null;   // venta en curso (diálogo)
+
+const prods = () => Object.entries(D.productos).map(([id, p]) => ({ id, ...p }))
+  .sort((a, b) => `${a.nombre}${a.talla}${a.color}`.localeCompare(`${b.nombre}${b.talla}${b.color}`, "es"));
+const ventasTodas = () => Object.entries(D.ventas).map(([id, v]) => ({ id, ...v })).sort((a, b) => b.ts - a.ts);
+const activas = () => ventasTodas().filter(v => !v.anulada);
+const nombreItem = x => [x.nombre, x.talla, x.color].filter(Boolean).join(" · ");
+const esBajo = p => (+p.stock || 0) <= (p.minimo ?? STOCK_BAJO);
+
+function toast(t) {
+  const e = $("#toast"); e.textContent = t; e.hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(() => e.hidden = true, 2600);
+}
+
+/* ---------------- Capa de datos: local (prueba) o Firebase ---------------- */
+const local = {
+  nuevoId: () => "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+  cargar() { try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) D = { productos: s.productos || {}, ventas: s.ventas || {} }; } catch {} },
+  guardar() { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch {} render(); },
+  async guardarProducto(id, p) { D.productos[id] = p; this.guardar(); },
+  async borrarProducto(id) { delete D.productos[id]; this.guardar(); },
+  async ajustar(id, delta) {
+    const p = D.productos[id]; if (!p) throw new Error("La prenda ya no existe");
+    if (p.stock + delta < 0) throw new Error("El stock no puede ser menor que 0");
+    p.stock += delta; this.guardar();
+  },
+  async vender(id, v) { D.productos[id].stock -= v.cantidad; D.ventas[this.nuevoId()] = v; this.guardar(); },
+  async anular(v) {
+    D.ventas[v.id].anulada = true;
+    if (D.productos[v.productoId]) D.productos[v.productoId].stock += v.cantidad;
+    this.guardar();
+  },
+  async importar(datos) { D = { productos: datos.productos || {}, ventas: datos.ventas || {} }; this.guardar(); }
+};
+
+const nube = {
+  nuevoId: () => db.ref("inventario/productos").push().key,
+  async guardarProducto(id, p) { await db.ref("inventario/productos/" + id).set(p); },
+  async borrarProducto(id) { await db.ref("inventario/productos/" + id).remove(); },
+  async ajustar(id, delta) {
+    if (!D.productos[id]) throw new Error("La prenda ya no existe");
+    const r = await db.ref("inventario/productos/" + id + "/stock").transaction(c => {
+      if (c === null) return 0;
+      return c + delta < 0 ? undefined : c + delta;
+    });
+    if (!r.committed) throw new Error("El stock no puede ser menor que 0");
+  },
+  async vender(id, v) {
+    const ref = db.ref("inventario/productos/" + id + "/stock");
+    const r = await ref.transaction(c => c === null ? 0 : (c >= v.cantidad ? c - v.cantidad : undefined));
+    if (!r.committed) throw new Error("No alcanza el stock (otra venta se registró antes)");
+    try { await db.ref("inventario/ventas").push(v); }
+    catch (e) { await ref.transaction(c => (c || 0) + v.cantidad); throw e; }
+  },
+  async anular(v) {
+    const r = await db.ref("inventario/ventas/" + v.id + "/anulada").transaction(c => c ? undefined : true);
+    if (!r.committed) return;
+    if (D.productos[v.productoId]) await db.ref("inventario/productos/" + v.productoId + "/stock").transaction(c => (c || 0) + v.cantidad);
+  },
+  async importar(datos) { await db.ref("inventario").set({ productos: datos.productos || {}, ventas: datos.ventas || {} }); }
+};
+const api = FB_OK ? nube : local;
+
+async function registrarVenta(id, cant, precio, fecha) {
+  const p = D.productos[id];
+  if (!p) throw new Error("La prenda ya no existe");
+  if (!(cant > 0)) throw new Error("Pon al menos 1 prenda");
+  if (!(precio >= 0)) throw new Error("Revisa el precio");
+  if (cant > p.stock) throw new Error(`Solo quedan ${p.stock} en stock`);
+  await api.vender(id, {
+    fecha, ts: Date.now(), productoId: id, nombre: p.nombre, talla: p.talla || "", color: p.color || "",
+    cantidad: cant, precio, total: Math.round(cant * precio * 100) / 100
+  });
+}
+
+/* ---------------- Vistas ---------------- */
+function render() {
+  if (!$("#app") || $("#app").hidden) return;
+  if (vista === "hoy") renderHoy();
+  if (vista === "stock") renderStock();
+  if (vista === "hist") renderHist();
+}
+
+function filaVenta(v, hora) {
+  return `<div class="venta"><div><b>${esc(nombreItem(v))}</b><small>${v.cantidad} × ${money(v.precio)}${hora ? " · " + horaStr(v.ts) : ""}</small></div>
+    <div class="tot">${money(v.total)}</div><button class="link" data-a="anular" data-id="${esc(v.id)}">Anular</button></div>`;
+}
+
+function renderHoy() {
+  const h = hoyStr(), vs = activas().filter(v => v.fecha === h);
+  $("#fechaHoy").textContent = fechaLarga(h);
+  $("#tUnid").textContent = suma(vs, "cantidad");
+  $("#tIng").textContent = money(suma(vs, "total"));
+  const bajos = prods().filter(esBajo);
+  $("#alertaBajo").innerHTML = bajos.length
+    ? `<button class="alerta" data-a="verBajo">${bajos.length} ${bajos.length === 1 ? "prenda con poco stock o agotada" : "prendas con poco stock o agotadas"}. Ver</button>` : "";
+  $("#ventasHoy").innerHTML = vs.length ? vs.map(v => filaVenta(v, true)).join("")
+    : `<p class="vacio">Todavía no registraste ventas hoy.</p>`;
+}
+
+function renderStock() {
+  const ps = prods();
+  const cats = ["Todas", ...new Set(ps.map(p => p.categoria).filter(Boolean))];
+  if (!cats.includes(fStock.cat)) fStock.cat = "Todas";
+  $("#chipsStock").innerHTML = cats.map(c => `<button data-cat="${esc(c)}" aria-pressed="${!fStock.bajo && c === fStock.cat}">${esc(c)}</button>`).join("")
+    + `<button data-bajo="1" aria-pressed="${fStock.bajo}">Poco stock</button>`;
+  $("#resStock").textContent = ps.length
+    ? `${suma(ps, "stock")} prendas en stock · ${ps.length} registradas · valor ${money(ps.reduce((s, p) => s + p.stock * p.precio, 0))}`
+    : "";
+  const q = sinTildes(fStock.q);
+  const vis = ps.filter(p => (fStock.bajo ? esBajo(p) : (fStock.cat === "Todas" || p.categoria === fStock.cat))
+    && (!q || sinTildes(`${p.nombre} ${p.talla} ${p.color} ${p.categoria}`).includes(q)));
+  if (!ps.length) {
+    $("#listaStock").innerHTML = `<p class="vacio">Aún no hay prendas. Registra la primera con el botón de arriba.</p>`
+      + (FB_OK ? "" : `<button class="btn sec" data-a="ejemplos">Cargar prendas de ejemplo (solo para probar)</button>`);
+    return;
+  }
+  $("#listaStock").innerHTML = vis.length ? vis.map(p => {
+    const cls = p.stock === 0 ? "cero" : esBajo(p) ? "bajo" : "ok";
+    return `<div class="prenda">
+      <div><b>${esc(p.nombre)}</b><small>${esc([p.talla, p.color].filter(Boolean).join(" · ") || "sin talla ni color")} · ${money(p.precio)}${p.categoria ? " · " + esc(p.categoria) : ""}</small></div>
+      <div class="pstock ${cls}"><b>${p.stock}</b><small>${p.stock === 0 ? "agotada" : "en stock"}</small></div>
+      <div class="pbtn">
+        <button class="mini" data-a="vender" data-id="${esc(p.id)}" ${p.stock === 0 ? "disabled" : ""}>Vender</button>
+        <button class="mini sec" data-a="reponer" data-id="${esc(p.id)}">+ Stock</button>
+        <button class="mini sec" data-a="editar" data-id="${esc(p.id)}">Editar</button>
+      </div></div>`;
+  }).join("") : `<p class="vacio">No se encontró ninguna prenda con ese filtro.</p>`;
+}
+
+const RANGOS = [["7", "7 días"], ["30", "30 días"], ["mes", "Este mes"], ["todo", "Todo"]];
+function desdeRango() {
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  if (rango === "7") t.setDate(t.getDate() - 6);
+  else if (rango === "30") t.setDate(t.getDate() - 29);
+  else if (rango === "mes") t.setDate(1);
+  else return "0000-00-00";
+  return fechaStr(t);
+}
+function renderHist() {
+  $("#chipsRango").innerHTML = RANGOS.map(([k, t]) => `<button data-r="${k}" aria-pressed="${rango === k}">${t}</button>`).join("");
+  const desde = desdeRango(), h = hoyStr();
+  const vs = activas().filter(v => v.fecha >= desde && v.fecha <= h);
+  $("#hUnid").textContent = suma(vs, "cantidad");
+  $("#hIng").textContent = money(suma(vs, "total"));
+
+  /* Gráfico: prendas vendidas por día */
+  if (rango !== "todo") {
+    const dias = [];
+    for (const d = parseFecha(desde); fechaStr(d) <= h; d.setDate(d.getDate() + 1)) dias.push(fechaStr(d));
+    const por = {}; vs.forEach(v => por[v.fecha] = (por[v.fecha] || 0) + v.cantidad);
+    const max = Math.max(1, ...dias.map(d => por[d] || 0)), muchos = dias.length > 14;
+    $("#grafico").innerHTML = `<div class="chart" role="img" aria-label="Prendas vendidas por día">` + dias.map((d, i) => {
+      const n = por[d] || 0, dt = parseFecha(d);
+      const et = dias.length <= 7 ? `${DIAS_C[dt.getDay()]}<br>${dt.getDate()}` : (!muchos || i % 5 === 0 || i === dias.length - 1 ? dt.getDate() : "");
+      return `<div class="bar" title="${fechaCorta(d)}: ${n} prendas"><div class="barcol">${n && !muchos ? `<span class="n">${n}</span>` : ""}<i style="height:${n / max * 85}%"></i></div><span class="l">${et}</span></div>`;
+    }).join("") + `</div>`;
+  } else $("#grafico").innerHTML = "";
+
+  /* Ranking */
+  const g = {};
+  vs.forEach(v => { const k = nombreItem(v); g[k] = g[k] || { n: 0, t: 0 }; g[k].n += v.cantidad; g[k].t += v.total; });
+  const top = Object.entries(g).sort((a, b) => b[1].n - a[1].n).slice(0, 5);
+  $("#ranking").innerHTML = top.length ? top.map(([k, x]) => `<div class="rank"><b>${esc(k)}</b><span>${x.n} · ${money(x.t)}</span></div>`).join("")
+    : `<p class="vacio">No hay ventas en este periodo.</p>`;
+
+  /* Por día */
+  const dias = {}; vs.forEach(v => (dias[v.fecha] = dias[v.fecha] || []).push(v));
+  const fechas = Object.keys(dias).sort().reverse();
+  $("#porDia").innerHTML = fechas.length ? fechas.map(f => `<details><summary>${fechaCorta(f)}<span>${suma(dias[f], "cantidad")} prendas · ${money(suma(dias[f], "total"))}</span></summary>${dias[f].map(v => filaVenta(v, false)).join("")}</details>`).join("")
+    : "";
+}
+
+/* ---------------- Navegación y filtros ---------------- */
+function ir(v) {
+  vista = v;
+  document.querySelectorAll("[id^='v-']").forEach(s => s.hidden = s.id !== "v-" + v);
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.v === v));
+  scrollTo(0, 0); render();
+}
+document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) ir(b.dataset.v); });
+$("#buscar").addEventListener("input", e => { fStock.q = e.target.value; renderStock(); });
+$("#chipsStock").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.bajo) fStock.bajo = !fStock.bajo; else { fStock.bajo = false; fStock.cat = b.dataset.cat; }
+  renderStock();
+});
+$("#chipsRango").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { rango = b.dataset.r; renderHist(); } });
+
+/* ---------------- Diálogos ---------------- */
+const dlg = $("#dlg");
+const cerrar = () => { dlg.close(); venta = null; };
+dlg.addEventListener("click", e => { if (e.target === dlg) cerrar(); });
+const msg = t => { const e = $("#dMsg"); if (e) e.textContent = t || ""; };
+const botonesFin = (...b) => b.join("");
+
+/* Registrar venta */
+function abrirVenta(id) {
+  const p = id && D.productos[id];
+  venta = { id: p ? id : null, cant: 1, precio: p ? p.precio : 0, fecha: hoyStr(), q: "" };
+  pintarVenta(); if (!dlg.open) dlg.showModal();
+}
+function listaElegir() {
+  const q = sinTildes(venta.q);
+  const ps = prods().filter(p => p.stock > 0 && (!q || sinTildes(`${p.nombre} ${p.talla} ${p.color}`).includes(q)));
+  return ps.length ? ps.map(p => `<button class="pick" data-a="elegir" data-id="${esc(p.id)}"><span><b>${esc(p.nombre)}</b><small>${esc([p.talla, p.color].filter(Boolean).join(" · "))} · ${money(p.precio)}</small></span><span class="st ${esc(esBajo(p) ? "bajo" : "")}">${p.stock}</span></button>`).join("")
+    : `<p class="vacio">${Object.keys(D.productos).length ? "No hay prendas con stock que coincidan." : "Primero registra prendas en la pestaña Stock."}</p>`;
+}
+function pintarVenta() {
+  if (!venta.id) {
+    dlg.innerHTML = `<div class="cuerpo"><h2>¿Qué prenda se vendió?</h2>
+      <input class="buscar" id="vBuscar" type="search" placeholder="Buscar prenda, talla o color" value="${esc(venta.q)}" aria-label="Buscar prenda">
+      <div id="vLista">${listaElegir()}</div>
+      <button class="btn sec" data-a="cerrar">Cancelar</button></div>`;
+    return;
+  }
+  const p = D.productos[venta.id];
+  dlg.innerHTML = `<div class="cuerpo"><h2>${esc(nombreItem(p))}</h2>
+    <small>Quedan ${p.stock} en stock</small>
+    <div class="paso"><button data-a="menos" aria-label="Una menos">−</button>
+      <input id="vCant" type="number" inputmode="numeric" min="1" max="${p.stock}" value="${venta.cant}" aria-label="Cantidad">
+      <button data-a="mas" aria-label="Una más">+</button></div>
+    <label>Precio de cada una (${NEGOCIO.moneda}) <small>cámbialo si hiciste descuento</small>
+      <input id="vPrecio" type="number" inputmode="decimal" min="0" step="any" value="${venta.precio}"></label>
+    <label>Fecha de la venta <small>deja la de hoy, salvo que registres una venta pasada</small>
+      <input id="vFecha" type="date" value="${venta.fecha}" max="${hoyStr()}"></label>
+    <div class="total"><span>Total</span><b id="vTotal">${money(venta.cant * venta.precio)}</b></div>
+    <p class="aviso" id="dMsg" role="status"></p>
+    <button class="btn verde" data-a="confirmarVenta">Registrar venta</button>
+    <button class="btn sec" data-a="otraPrenda">Cambiar prenda</button></div>`;
+}
+dlg.addEventListener("input", e => {
+  if (!venta) return;
+  if (e.target.id === "vBuscar") { venta.q = e.target.value; $("#vLista").innerHTML = listaElegir(); }
+  if (e.target.id === "vCant" || e.target.id === "vPrecio" || e.target.id === "vFecha") {
+    venta.cant = Math.floor(+$("#vCant").value) || 0; venta.precio = +$("#vPrecio").value || 0; venta.fecha = $("#vFecha").value || hoyStr();
+    $("#vTotal").textContent = money(venta.cant * venta.precio);
+  }
+});
+
+/* Registrar / editar prenda */
+function abrirPrenda(id, base) {
+  const p = id ? D.productos[id] : (base || {});
+  dlg.innerHTML = `<form class="formu" id="fProd" data-id="${esc(id || "")}" novalidate>
+    <h2>${id ? "Editar prenda" : "Registrar prenda"}</h2>
+    <label>Nombre de la prenda<input name="nombre" required value="${esc(p.nombre)}" placeholder="Ej. Chompa alpaca clásica"></label>
+    <label>Categoría <small>Chompas, Chalinas, Gorros…</small><input name="categoria" list="cats" value="${esc(p.categoria)}"></label>
+    <datalist id="cats">${[...new Set(prods().map(x => x.categoria).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join("")}</datalist>
+    <div class="dos">
+      <label>Talla<input name="talla" value="${esc(p.talla)}" placeholder="S, M, L, única"></label>
+      <label>Color<input name="color" value="${esc(p.color)}" placeholder="gris, beige"></label>
+    </div>
+    <div class="dos">
+      <label>Precio de venta (${NEGOCIO.moneda})<input name="precio" type="number" inputmode="decimal" min="0" step="any" required value="${esc(p.precio ?? "")}"></label>
+      <label>${id ? "Stock actual" : "Stock inicial"}<input name="stock" type="number" inputmode="numeric" min="0" step="1" required value="${esc(p.stock ?? "")}"></label>
+    </div>
+    <label>Avisar con poco stock <small>cuando queden esta cantidad o menos</small><input name="minimo" type="number" inputmode="numeric" min="0" step="1" value="${esc(p.minimo ?? STOCK_BAJO)}"></label>
+    <p class="aviso" id="dMsg" role="status"></p>
+    <button class="btn verde" type="submit">Guardar</button>
+    ${id ? "" : `<button class="btn" type="submit" data-mas="1">Guardar y agregar otra talla o color</button>`}
+    <button class="btn sec" type="button" data-a="cerrar">Cancelar</button>
+    ${id ? `<button class="btn peligro" type="button" data-a="borrar" data-id="${esc(id)}">Eliminar prenda</button>` : ""}
+  </form>`;
+  if (!dlg.open) dlg.showModal();
+}
+dlg.addEventListener("submit", async e => {
+  if (e.target.id !== "fProd") return;
+  e.preventDefault();
+  const f = e.target, v = n => f.elements[n].value.trim(), mas = e.submitter && e.submitter.dataset.mas;
+  if (!v("nombre")) return msg("Escribe el nombre de la prenda.");
+  if (v("precio") === "" || +v("precio") < 0) return msg("Escribe el precio de venta.");
+  if (v("stock") === "" || +v("stock") < 0) return msg("Escribe cuántas hay en stock (puede ser 0).");
+  const datos = { nombre: v("nombre"), categoria: v("categoria"), talla: v("talla"), color: v("color"), precio: +v("precio"), stock: Math.floor(+v("stock")), minimo: v("minimo") === "" ? STOCK_BAJO : Math.floor(+v("minimo")) };
+  const id = f.dataset.id || api.nuevoId();
+  try {
+    await api.guardarProducto(id, datos);
+    if (mas) { toast("Prenda guardada"); abrirPrenda(null, { nombre: datos.nombre, categoria: datos.categoria, precio: datos.precio, minimo: datos.minimo }); }
+    else { cerrar(); toast("Prenda guardada"); }
+  } catch (err) { msg("No se pudo guardar: " + err.message); }
+});
+
+/* Reponer stock */
+function abrirReponer(id) {
+  const p = D.productos[id];
+  dlg.innerHTML = `<div class="cuerpo"><h2>Llegaron más prendas</h2><p><b>${esc(nombreItem(p))}</b><br><small>Ahora hay ${p.stock}</small></p>
+    <div class="paso"><button data-a="menosR" aria-label="Una menos">−</button><input id="rCant" type="number" inputmode="numeric" min="1" value="1" aria-label="Cantidad"><button data-a="masR" aria-label="Una más">+</button></div>
+    <p class="aviso" id="dMsg" role="status"></p>
+    <button class="btn verde" data-a="confirmarReponer" data-id="${esc(id)}">Agregar al stock</button>
+    <button class="btn sec" data-a="cerrar">Cancelar</button></div>`;
+  if (!dlg.open) dlg.showModal();
+}
+
+/* Menú */
+function abrirMenu() {
+  dlg.innerHTML = `<div class="cuerpo"><h2>Opciones</h2>
+    <button class="menuitem" data-a="respaldo">Descargar copia de seguridad (JSON)</button>
+    ${FB_OK ? `<button class="menuitem" data-a="salir">Cerrar sesión</button>`
+            : `<button class="menuitem" data-a="ejemplos">Cargar prendas de ejemplo</button><button class="menuitem" data-a="vaciar">Borrar todos los datos de prueba</button>`}
+    <button class="btn sec" data-a="cerrar">Cerrar</button></div>`;
+  dlg.showModal();
+}
+$("#btnMenu").addEventListener("click", abrirMenu);
+
+/* Acciones */
+const EJEMPLOS = [
+  ["Chompa alpaca clásica", "Chompas", "S", "gris", 250, 4], ["Chompa alpaca clásica", "Chompas", "M", "gris", 250, 6], ["Chompa alpaca clásica", "Chompas", "L", "beige", 250, 3],
+  ["Chalina tejida", "Chalinas", "única", "rojo", 90, 8], ["Chalina tejida", "Chalinas", "única", "azul", 90, 1],
+  ["Gorro con pompón", "Gorros", "única", "crema", 60, 10], ["Guantes sin dedos", "Guantes", "S/M", "negro", 45, 0]
+];
+function cargarEjemplos() {
+  EJEMPLOS.forEach(([nombre, categoria, talla, color, precio, stock]) => { D.productos[local.nuevoId()] = { nombre, categoria, talla, color, precio, stock, minimo: STOCK_BAJO }; });
+  local.guardar();
+}
+function descargar(nombre, texto, tipo) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([texto], { type: tipo }));
+  a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+}
+function exportarCSV() {
+  const desde = desdeRango(), h = hoyStr();
+  const celda = x => `"${String(x ?? "").replace(/"/g, '""')}"`;
+  const filas = [["Fecha", "Prenda", "Talla", "Color", "Cantidad", "Precio", "Total"]];
+  activas().filter(v => v.fecha >= desde && v.fecha <= h).reverse().forEach(v => filas.push([v.fecha, v.nombre, v.talla, v.color, v.cantidad, v.precio, v.total]));
+  descargar(`ventas-${h}.csv`, "﻿" + filas.map(f => f.map(celda).join(",")).join("\n"), "text/csv;charset=utf-8");
+}
+
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-a]"); if (!b) return;
+  const a = b.dataset.a, id = b.dataset.id;
+  try {
+    if (a === "cerrar") cerrar();
+    else if (a === "nuevaVenta") abrirVenta(null);
+    else if (a === "vender") abrirVenta(id);
+    else if (a === "nuevaPrenda") abrirPrenda(null);
+    else if (a === "editar") abrirPrenda(id);
+    else if (a === "reponer") abrirReponer(id);
+    else if (a === "verBajo") { fStock.bajo = true; ir("stock"); }
+    else if (a === "csv") exportarCSV();
+    else if (a === "respaldo") descargar(`respaldo-tejidos-${hoyStr()}.json`, JSON.stringify(D, null, 1), "application/json");
+    else if (a === "ejemplos") { cargarEjemplos(); if (dlg.open) cerrar(); toast("Prendas de ejemplo cargadas"); }
+    else if (a === "vaciar") { if (confirm("¿Borrar todos los datos de prueba de este teléfono?")) { D = { productos: {}, ventas: {} }; local.guardar(); cerrar(); } }
+    else if (a === "salir") { cerrar(); await auth.signOut(); }
+    /* venta */
+    else if (a === "elegir") { venta.id = id; venta.precio = D.productos[id].precio; venta.cant = 1; pintarVenta(); }
+    else if (a === "otraPrenda") { venta.id = null; pintarVenta(); }
+    else if (a === "menos" || a === "mas") {
+      const max = D.productos[venta.id].stock;
+      venta.cant = Math.min(max, Math.max(1, (Math.floor(+$("#vCant").value) || 1) + (a === "mas" ? 1 : -1)));
+      $("#vCant").value = venta.cant; $("#vTotal").textContent = money(venta.cant * venta.precio);
+    }
+    else if (a === "confirmarVenta") {
+      venta.cant = Math.floor(+$("#vCant").value) || 0; venta.precio = +$("#vPrecio").value; venta.fecha = $("#vFecha").value || hoyStr();
+      const p = D.productos[venta.id], nom = nombreItem(p), c = venta.cant;
+      await registrarVenta(venta.id, venta.cant, venta.precio, venta.fecha);
+      cerrar(); toast(`Vendido: ${c} × ${nom}`);
+    }
+    /* reponer */
+    else if (a === "menosR" || a === "masR") { const i = $("#rCant"); i.value = Math.max(1, (Math.floor(+i.value) || 1) + (a === "masR" ? 1 : -1)); }
+    else if (a === "confirmarReponer") {
+      const n = Math.floor(+$("#rCant").value);
+      if (!(n > 0)) return msg("Escribe cuántas llegaron.");
+      await api.ajustar(id, n); cerrar(); toast(`Se agregaron ${n} al stock`);
+    }
+    /* borrar / anular */
+    else if (a === "borrar") {
+      const p = D.productos[id];
+      if (confirm(`¿Eliminar "${nombreItem(p)}"? Las ventas ya registradas se conservan.`)) { await api.borrarProducto(id); cerrar(); toast("Prenda eliminada"); }
+    }
+    else if (a === "anular") {
+      const v = ventasTodas().find(x => x.id === id);
+      if (v && confirm(`¿Anular la venta de ${v.cantidad} × ${nombreItem(v)}? El stock se devuelve.`)) { await api.anular(v); toast("Venta anulada"); }
+    }
+  } catch (err) { if (dlg.open && $("#dMsg")) msg(err.message); else toast(err.message || "No se pudo completar"); }
+});
+
+/* ---------------- Arranque ---------------- */
+function mostrarApp() { $("#login").hidden = true; $("#app").hidden = false; ir(vista); }
+function mostrarLogin() { $("#app").hidden = true; $("#login").hidden = false; }
+$("#marca").textContent = NEGOCIO.nombre;
+$("#loginMarca").textContent = NEGOCIO.nombre;
+document.title = `Inventario · ${NEGOCIO.nombre}`;
+
+
+/* ---- SOLO DEMO: datos de ejemplo, sin descargas ni cuadros de confirmación del navegador ---- */
+window.confirm = () => true;
+descargar = () => toast("En la versión real aquí se descarga el archivo");
+(function sembrar() {
+  const P = [
+    ["Chompa alpaca clásica","Chompas","S","gris",250,3],["Chompa alpaca clásica","Chompas","M","gris",250,5],["Chompa alpaca clásica","Chompas","L","beige",250,2],
+    ["Chompa cuello alto","Chompas","M","marrón",280,4],["Cárdigan con botones","Chompas","L","mostaza",320,3],
+    ["Chalina tejida","Chalinas","única","rojo",90,7],["Chalina tejida","Chalinas","única","azul",90,1],["Chalina infinita","Chalinas","única","rosado",110,5],
+    ["Gorro con pompón","Gorros","única","crema",60,9],["Gorro chullo andino","Gorros","única","multicolor",75,6],["Guantes sin dedos","Guantes","S/M","negro",45,0]
+  ];
+  const ids = P.map(([nombre, categoria, talla, color, precio, stock]) => {
+    const id = local.nuevoId(); D.productos[id] = { nombre, categoria, talla, color, precio, stock, minimo: STOCK_BAJO }; return id;
+  });
+  /* ventas por día (hace N días): [prenda, cantidad] */
+  const V = { 6:[[1,1],[5,2],[8,3]], 5:[[0,1],[7,1],[9,2],[8,2]], 4:[[2,1],[5,1]], 3:[[1,2],[3,1],[6,1],[8,2],[9,1]], 2:[[4,1],[5,3],[7,2]], 1:[[0,1],[1,1],[9,1],[10,2]], 0:[[1,1],[5,2],[8,1]] };
+  for (const [hace, lista] of Object.entries(V)) {
+    const d = new Date(); d.setDate(d.getDate() - hace);
+    lista.forEach(([i, cant], k) => {
+      const p = D.productos[ids[i]], ts = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9 + k, 15 + k * 7).getTime();
+      D.ventas[local.nuevoId()] = { fecha: fechaStr(d), ts, productoId: ids[i], nombre: p.nombre, talla: p.talla, color: p.color, cantidad: cant, precio: p.precio, total: cant * p.precio };
+    });
+  }
+})();
+if (!FB_OK) {
+  $("#modoLocal").hidden = false;
+  mostrarApp();
+} else {
+  firebase.initializeApp(FIREBASE);
+  db = firebase.database(); auth = firebase.auth();
+  let refs = [];
+  auth.onAuthStateChanged(u => {
+    refs.forEach(r => r.off()); refs = [];
+    if (!u) { D = { productos: {}, ventas: {} }; return mostrarLogin(); }
+    mostrarApp();
+    ["productos", "ventas"].forEach(k => {
+      const r = db.ref("inventario/" + k); refs.push(r);
+      r.on("value", s => { D[k] = s.val() || {}; render(); }, err => toast("Sin permiso para leer los datos: " + err.message));
+    });
+  });
+  const entrar = async () => {
+    $("#lMsg").textContent = "Entrando…";
+    try { await auth.signInWithEmailAndPassword($("#lCorreo").value.trim(), $("#lClave").value); $("#lMsg").textContent = ""; }
+    catch { $("#lMsg").textContent = "Correo o contraseña incorrectos."; }
+  };
+  $("#lEntrar").addEventListener("click", entrar);
+  $("#lClave").addEventListener("keydown", e => { if (e.key === "Enter") entrar(); });
+}
+</script>
+</body>
+</html>
